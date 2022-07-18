@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  cockroach:
+    image: cockroachdb/cockroach:v22.1.3
+    command: start-single-node --insecure
+    ports:
+      - 26257:26257
+      - 8080:8080
+    volumes:
+      - "./dev/database:/cockroach/cockroach-data"
