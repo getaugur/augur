@@ -1,6 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { trpc } from "../utils/trpc";
+import LoginButton from "../components/login-button";
 
 const Home: NextPage = () => {
   const { data, isLoading } = trpc.useQuery([
@@ -45,6 +46,7 @@ const Home: NextPage = () => {
           </ul>
 
           <div>{data ? <p>{data.greeting}</p> : <p>Loading..</p>}</div>
+          <LoginButton />
         </div>
       </div>
     </>
