@@ -6,9 +6,8 @@ generator client {
 }
 
 datasource db {
-    provider = "sqlite"
-    url      = "file:./db.sqlite"
-    // url      = env("DATABASE_URL")
+    provider = "cockroachdb"
+    url      = env("DATABASE_URL")
 }
 
 model Example {
@@ -44,13 +43,14 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
+    id            String        @id @default(cuid())
     name          String?
-    email         String?   @unique
+    email         String?       @unique
     emailVerified DateTime?
     image         String?
     accounts      Account[]
     sessions      Session[]
+    WatchHistory  WatchHistory?
 }
 
 model VerificationToken {
@@ -59,4 +59,76 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model MediaIds {
+    id    String  @id @default(cuid())
+    trakt Int
+    tvdb  Int?
+    imdb  String?
+    tmdb  Int?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    mediaType MediaType
+    Media     Media?
+
+    @@unique([trakt, mediaType])
+}
+
+enum MediaType {
+    MOVIE
+    SHOW
+    ACTOR
+}
+
+model Media {
+    id    String @id @default(cuid())
+    title String
+    year  Int
+
+    // overview              String
+    // runtime               Int
+    // country               String
+    // trailer               String?
+    // homepage              String?
+    // status                String
+    // rating                Int
+    // votes                 Int
+    // commentCount          Int
+    // language              String
+    // availableTranslations String[]
+    // genres                String[]
+    // certification         String
+
+    // // movie specific
+    // tagline  String?
+    // released DateTime? // date only
+
+    // // tv specific
+    // firstAired    DateTime? // date and time
+    // airsDay       String?
+    // airsTime      String?
+    // airsTimezone  String?
+    // airedEpisodes Int?
+    // network       String?
+
+    mediaIds   MediaIds @relation(fields: [mediaIdsId], references: [id])
+    mediaIdsId String   @unique
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([title, year])
+}
+
+model WatchHistory {
+    id String @id @default(cuid())
+
+    user   User   @relation(fields: [userId], references: [id])
+    userId String @unique
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
