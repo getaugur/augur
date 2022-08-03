@@ -16,7 +16,7 @@
 # data_store = "mysql://gorse:gorse_pass@tcp(localhost:3306)/gorse"
 
 # The naming prefix for tables (collections, keys) in databases.
-table_prefix = "gorse_"
+table_prefix = ""
 
 [master]
 
@@ -178,13 +178,13 @@ refresh_recommend_period = "24h"
 enable_latest_recommend = true
 
 # Enable popular recommendation during offline recommendation. The default value is false.
-enable_popular_recommend = false
+enable_popular_recommend = true
 
 # Enable user-based similarity recommendation during offline recommendation. The default value is false.
 enable_user_based_recommend = true
 
 # Enable item-based similarity recommendation during offline recommendation. The default value is false.
-enable_item_based_recommend = false
+enable_item_based_recommend = true
 
 # Enable collaborative filtering recommendation during offline recommendation. The default value is true.
 enable_collaborative_recommend = true
