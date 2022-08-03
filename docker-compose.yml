@@ -5,7 +5,9 @@ services:
     image: cockroachdb/cockroach:v22.1.5
     command: start-single-node --insecure
     ports:
+      # postgres
       - 26257:26257
+      # ui
       - 8081:8080
     volumes:
       - "./dev/database:/cockroach/cockroach-data"
@@ -15,11 +17,12 @@ services:
     command: >
       -c /etc/gorse/config.toml
     environment:
-      GORSE_DATA_STORE: postgres://root@cockroach:26257/defaultdb?sslmode=disable
-      GORSE_CACHE_STORE: postgres://root@cockroach:26257/defaultdb?sslmode=disable
+      GORSE_DATA_STORE: postgres://root@cockroach:26257/gorse?sslmode=disable
+      GORSE_CACHE_STORE: postgres://root@cockroach:26257/gorse?sslmode=disable
       # GORSE_DATA_STORE: postgresql://root@cockroach:26257/defaultdb?sslmode=disable
       # GORSE_CACHE_STORE: postgresql://root@cockroach:26257/defaultdb?sslmode=disable
     ports:
+      # ui & api
       - "8088:8088"
     volumes:
       - ./gorse/config.toml:/etc/gorse/config.toml
