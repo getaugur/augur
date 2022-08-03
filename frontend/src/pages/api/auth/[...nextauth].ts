@@ -5,6 +5,7 @@ import TraktProvider from "next-auth/providers/trakt";
 // Prisma adapter for NextAuth, optional and can be removed
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "../../../server/db/client";
+import { MediaType } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   // Configure one or more authentication providers
@@ -54,8 +55,8 @@ async function getWatchlist(id: string) {
 
         // movie
         if (type === types[0])
-          processTraktMovies(content as TraktApiWatchedMovie[]);
-        else processTraktShows(content as TraktApiWatchedShow[]);
+          processTraktMedia(content as TraktApiWatchedMovie[], "MOVIE");
+        else processTraktMedia(content as TraktApiWatchedShow[], "SHOW");
       });
   }
 }
@@ -99,93 +100,53 @@ interface TraktApiWatchedShow extends TraktApiWatchedBase {
   seasons?: TraktApiShowSeason[];
 }
 
-async function processTraktMovies(movies: TraktApiWatchedMovie[]) {
-  let count = 0;
-
-  for (let i = 0; i < movies.length; i++) {
-    const movie = movies[i];
-
-    if (movie === undefined) continue;
-
-    await prisma.media.upsert({
-      where: {
-        title_year: {
-          title: movie.movie.title,
-          year: movie.movie.year,
-        },
-      },
-      create: {
-        title: movie.movie.title,
-        year: movie.movie.year,
-        mediaIds: {
-          connectOrCreate: {
-            where: {
-              trakt_mediaType: {
-                trakt: movie.movie.ids.trakt,
-                mediaType: "MOVIE",
-              },
-            },
-            create: {
-              trakt: movie.movie.ids.trakt,
-              tvdb: movie.movie.ids.tvdb,
-              imdb: movie.movie.ids.imdb,
-              tmdb: movie.movie.ids.tmdb,
-              mediaType: "MOVIE",
-            },
-          },
-        },
-      },
-      update: {
-        mediaIds: {
-          update: {
-            trakt: movie.movie.ids.trakt,
-            tvdb: movie.movie.ids.tvdb,
-            imdb: movie.movie.ids.imdb,
-            tmdb: movie.movie.ids.tmdb,
-            mediaType: "MOVIE",
-          },
-        },
-      },
-    });
-
-    count++;
-  }
-
-  console.log(`Added ${count} movies`);
+/**
+ * Checks if object is TraktApiWatchedMovie
+ * @param obj
+ * @returns
+ */
+function isMovie(obj: any): obj is TraktApiWatchedMovie {
+  return "movie" in obj;
 }
 
-async function processTraktShows(shows: TraktApiWatchedShow[]) {
+async function processTraktMedia(
+  mediaList: TraktApiWatchedMovie[] | TraktApiWatchedShow[],
+  mediaType: MediaType
+) {
   let count = 0;
 
-  for (let i = 0; i < shows.length; i++) {
-    const show = shows[i];
+  for (let i = 0; i < mediaList.length; i++) {
+    const media = mediaList[i];
 
-    if (show === undefined) continue;
+    if (media === undefined) continue;
+
+    // could use mediaType here but ts doesn't like that
+    const mediaBase = isMovie(media) ? media.movie : media.show;
 
     await prisma.media.upsert({
       where: {
         title_year: {
-          title: show.show.title,
-          year: show.show.year,
+          title: mediaBase.title,
+          year: mediaBase.year,
         },
       },
       create: {
-        title: show.show.title,
-        year: show.show.year,
+        title: mediaBase.title,
+        year: mediaBase.year,
         mediaIds: {
           connectOrCreate: {
             where: {
               trakt_mediaType: {
-                trakt: show.show.ids.trakt,
-                mediaType: "SHOW",
+                trakt: mediaBase.ids.trakt,
+                mediaType: mediaType,
               },
             },
             create: {
-              trakt: show.show.ids.trakt,
-              tvdb: show.show.ids.tvdb,
-              imdb: show.show.ids.imdb,
-              tmdb: show.show.ids.tmdb,
-              mediaType: "SHOW",
+              trakt: mediaBase.ids.trakt,
+              tvdb: mediaBase.ids.tvdb,
+              imdb: mediaBase.ids.imdb,
+              tmdb: mediaBase.ids.tmdb,
+              mediaType: mediaType,
             },
           },
         },
@@ -193,11 +154,11 @@ async function processTraktShows(shows: TraktApiWatchedShow[]) {
       update: {
         mediaIds: {
           update: {
-            trakt: show.show.ids.trakt,
-            tvdb: show.show.ids.tvdb,
-            imdb: show.show.ids.imdb,
-            tmdb: show.show.ids.tmdb,
-            mediaType: "SHOW",
+            trakt: mediaBase.ids.trakt,
+            tvdb: mediaBase.ids.tvdb,
+            imdb: mediaBase.ids.imdb,
+            tmdb: mediaBase.ids.tmdb,
+            mediaType: mediaType,
           },
         },
       },
@@ -206,5 +167,5 @@ async function processTraktShows(shows: TraktApiWatchedShow[]) {
     count++;
   }
 
-  console.log(`Added ${count} shows`);
+  console.log(`Added ${count} ${mediaType}`);
 }
