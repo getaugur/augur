@@ -80,6 +80,7 @@ model MediaIds {
 enum MediaType {
     MOVIE
     SHOW
+    ACTOR
 }
 
 model Media {
