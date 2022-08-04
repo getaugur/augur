@@ -3,6 +3,14 @@ import { prisma } from "../server/db/client";
 import { UpdatedMedia, updateGorseMedia, updateGorseUser } from "./gorse";
 import got from "got";
 import {
+  TraktApiCastMember,
+  TraktApiCrewMember,
+  TraktApiMovieCrew,
+  TraktApiMoviePeople,
+  TraktApiShowCastMember,
+  TraktApiShowCrew,
+  TraktApiShowCrewMember,
+  TraktApiShowPeople,
   TraktApiWatchedMovie,
   TraktApiWatchedMovieFull,
   TraktApiWatchedShow,
@@ -85,6 +93,9 @@ export async function processTraktMedia(
     // could use mediaType here but ts doesn't like that
     const mediaBase = isMovie(rawMedia) ? rawMedia.movie : rawMedia.show;
     const media = await fetchTraktMedia(mediaBase.ids.trakt, mediaType);
+    const people = await processTraktMediaPeople(
+      await fetchTraktMediaPeople(mediaBase.ids.trakt, mediaType)
+    );
 
     // if (i === 0) console.log({ media });
 
@@ -104,6 +115,7 @@ export async function processTraktMedia(
       genres: media.genres,
       country: media.country,
       certification: media.certification,
+      people: people,
     };
 
     const stdIds = {
@@ -191,7 +203,73 @@ async function fetchTraktMedia(
     }
   );
 
-  const full = JSON.parse(media.body) as TraktApiWatchedMovieFull;
+  if (type === "MOVIE")
+    return JSON.parse(media.body) as TraktApiWatchedMovieFull;
+  else if (type === "SHOW")
+    return JSON.parse(media.body) as TraktApiWatchedShowFull;
+  else return JSON.parse(media.body) as TraktApiWatchedMovieFull;
+}
 
-  return full;
+export function isShowCrew(
+  obj: TraktApiMovieCrew | TraktApiShowCrew
+): obj is TraktApiShowCrew {
+  return "created by" in obj;
+}
+
+function processTraktMediaPeople(
+  people: TraktApiMoviePeople | TraktApiShowPeople
+): string[] {
+  const processedPeople: string[] = [];
+
+  function existsThenProcess(
+    job: TraktApiCrewMember[] | TraktApiShowCrewMember[] | undefined
+  ) {
+    if (job !== undefined)
+      job.forEach((person) => {
+        processedPeople.push(person.person.name);
+      });
+  }
+
+  if (people?.cast !== undefined) {
+    people.cast.forEach((person) => {
+      processedPeople.push(person.person.name);
+    });
+  }
+
+  if (people?.crew !== undefined) {
+    existsThenProcess(people.crew?.art);
+    existsThenProcess(people.crew?.production);
+    existsThenProcess(people.crew?.sound);
+    existsThenProcess(people.crew?.["visual effects"]);
+    existsThenProcess(people.crew?.["costume & make-up"]);
+    existsThenProcess(people.crew?.writing);
+    existsThenProcess(people.crew?.directing);
+    existsThenProcess(people.crew?.lighting);
+    existsThenProcess(people.crew?.editing);
+
+    if (isShowCrew(people.crew)) existsThenProcess(people.crew["created by"]);
+  }
+
+  return processedPeople;
+}
+
+async function fetchTraktMediaPeople(
+  id: number,
+  type: MediaType
+): Promise<TraktApiMoviePeople | TraktApiShowPeople> {
+  const people = await got.get(
+    `https://api.trakt.tv/${type.toLowerCase()}s/${id}/people`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "trakt-api-version": "2",
+        "trakt-api-key": process.env.TRAKT_ID || "",
+      },
+    }
+  );
+
+  if (type === "MOVIE") return JSON.parse(people.body) as TraktApiMoviePeople;
+  else if (type === "SHOW")
+    return JSON.parse(people.body) as TraktApiShowPeople;
+  else return JSON.parse(people.body) as TraktApiMoviePeople;
 }
