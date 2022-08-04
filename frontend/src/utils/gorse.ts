@@ -1,4 +1,4 @@
-import { Gorse } from "@gorse-io/gorsejs";
+import { Gorse, Item } from "@gorse-io/gorsejs";
 import { Media } from "@prisma/client";
 import { prisma } from "../server/db/client";
 
@@ -21,7 +21,7 @@ export async function updateGorseUser(userId: string, provider: string) {
 }
 
 export async function updateGorseMedia(updatedMedia: UpdatedMedia[]) {
-  let count = 0;
+  const items: Item[] = [];
 
   for (let i = 0; i < updatedMedia.length; i++) {
     const mediaObj = updatedMedia[i];
@@ -44,15 +44,14 @@ export async function updateGorseMedia(updatedMedia: UpdatedMedia[]) {
 
     const labels = extractLabels(media);
 
-    gorseClient.upsertItem({
+    items.push({
       ItemId: `${mediaObj.title}-${mediaObj.year}`,
       Comment: media.title,
       IsHidden: false,
       Timestamp: new Date(media.firstAired || media.released || ""),
       Categories: [media.mediaIds.mediaType, ...media.genres],
-      Labels: [...media.genres, ...labels],
+      Labels: [...media.genres, ...labels, ...media.people],
     });
-    count++;
 
     if (i === 0) {
       gorseClient.upsertFeedbacks([
@@ -66,7 +65,9 @@ export async function updateGorseMedia(updatedMedia: UpdatedMedia[]) {
     }
   }
 
-  console.log(`Added ${count} items to gorse`);
+  gorseClient.upsertItems(items);
+
+  console.log(`Added ${items.length} items to gorse`);
 }
 
 export function extractLabels(media: Media): string[] {
