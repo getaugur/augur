@@ -8,8 +8,8 @@ export interface UpdatedMedia {
 }
 
 export const gorseClient = new Gorse({
-  endpoint: "http://127.0.0.1:8088",
-  secret: "",
+  endpoint: process.env.GORSE_ENDPOINT || "",
+  secret: process.env.GORSE_SECRET || "",
 });
 
 export async function updateGorseUser(userId: string, provider: string) {
