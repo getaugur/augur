@@ -62,11 +62,12 @@ model VerificationToken {
 }
 
 model MediaIds {
-    id    String  @id @default(cuid())
-    trakt Int
-    tvdb  Int?
-    imdb  String?
-    tmdb  Int?
+    id        String  @id @default(cuid())
+    trakt     Int
+    traktSlug String
+    tvdb      Int?
+    imdb      String?
+    tmdb      Int?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -75,6 +76,7 @@ model MediaIds {
     Media     Media?
 
     @@unique([trakt, mediaType])
+    @@unique([traktSlug, mediaType])
 }
 
 enum MediaType {
