@@ -3,19 +3,23 @@ import { prisma } from "../server/db/client";
 import { UpdatedMedia, updateGorseMedia, updateGorseUser } from "./gorse";
 import got from "got";
 import {
-  TraktApiCastMember,
-  TraktApiCrewMember,
-  TraktApiMovieCrew,
-  TraktApiMoviePeople,
-  TraktApiShowCastMember,
-  TraktApiShowCrew,
-  TraktApiShowCrewMember,
-  TraktApiShowPeople,
-  TraktApiWatchedMovie,
-  TraktApiWatchedMovieFull,
-  TraktApiWatchedShow,
-  TraktApiWatchedShowFull,
-} from "./traktTypes";
+  Trakt,
+  WatchedShow,
+  WatchedMovie,
+  ShowSummary_Full,
+  MovieSummary_Full,
+  MoviePeople,
+  ShowPeople,
+  ShowCrewMember,
+  MovieCrewMember,
+  MovieCrew,
+  ShowCrew,
+} from "better-trakt";
+
+const traktClient = new Trakt({
+  cliendId: process.env.TRAKT_ID || "",
+  clientSecret: process.env.TRAKT_SECRET || "",
+});
 
 export async function getWatchlist(id: string) {
   const account = await prisma.account.findUnique({
@@ -27,29 +31,17 @@ export async function getWatchlist(id: string) {
     },
   });
 
-  const types = ["movies", "shows"];
+  const watchedMovies = await traktClient.users.watched.movies(
+    id,
+    account?.access_token || undefined
+  );
+  processTraktMovie(watchedMovies);
 
-  for (let i = 0; i < types.length; i++) {
-    const type = types[i];
-
-    got
-      .get(`https://api.trakt.tv/users/${id}/watched/${type}`, {
-        headers: {
-          "Content-Type": "application/json",
-          "trakt-api-version": "2",
-          "trakt-api-key": process.env.TRAKT_ID || "",
-          Authorization: `Bearer ${account?.access_token}`,
-        },
-      })
-      .then((data) => {
-        const content = JSON.parse(data.body);
-
-        // movie
-        if (type === types[0])
-          processTraktMedia(content as TraktApiWatchedMovie[], "MOVIE");
-        else processTraktMedia(content as TraktApiWatchedShow[], "SHOW");
-      });
-  }
+  const watchedShows = await traktClient.users.watched.shows(
+    id,
+    account?.access_token || undefined
+  );
+  processTraktShow(watchedShows);
 
   await updateGorseUser(id, "Trakt");
 }
@@ -70,20 +62,101 @@ interface MediaSpecificItems {
  * @param obj
  * @returns
  */
-export function isMovie(obj: any): obj is TraktApiWatchedMovie {
+export function isMovie(obj: any): obj is WatchedMovie {
   return "movie" in obj;
 }
 
-export function isFullMovie(obj: any): obj is TraktApiWatchedMovieFull {
-  return "tagline" in obj;
-}
-
-export async function processTraktMedia(
-  mediaList: TraktApiWatchedMovie[] | TraktApiWatchedShow[],
+async function extractStdData(
+  media: ShowSummary_Full | MovieSummary_Full,
   mediaType: MediaType
 ) {
+  const people = await processTraktMediaPeople(
+    mediaType === "MOVIE"
+      ? await traktClient.movies.people(media.ids.slug)
+      : await traktClient.shows.people(media.ids.slug)
+  );
+
+  return {
+    title: media.title,
+    year: media.year,
+    overview: media.overview,
+    runtime: media.runtime,
+    trailer: media.trailer,
+    homepage: media.trailer,
+    status: media.status,
+    rating: media.rating,
+    votes: media.votes,
+    commentCount: media.comment_count,
+    language: media.language,
+    availableTranslations: media.available_translations,
+    genres: media.genres,
+    country: media.country,
+    certification: media.certification,
+    people: people,
+  };
+}
+
+function extractStdIds(
+  media: ShowSummary_Full | MovieSummary_Full,
+  mediaType: MediaType
+) {
+  return {
+    trakt: media.ids.trakt,
+    traktSlug: media.ids.slug,
+    tvdb: media.ids.tvdb,
+    imdb: media.ids.imdb,
+    tmdb: media.ids.tmdb,
+    mediaType: mediaType,
+  };
+}
+
+async function saveMedia(
+  media: ShowSummary_Full | MovieSummary_Full,
+  mediaType: MediaType,
+  mediaSpecific: MediaSpecificItems
+) {
+  const stdData = await extractStdData(media, mediaType);
+
+  const stdIds = extractStdIds(media, mediaType);
+
+  await prisma.media.upsert({
+    where: {
+      title_year: {
+        title: media.title,
+        year: media.year,
+      },
+    },
+    create: {
+      ...stdData,
+      ...mediaSpecific,
+      mediaIds: {
+        connectOrCreate: {
+          where: {
+            trakt_mediaType: {
+              trakt: media.ids.trakt,
+              mediaType: mediaType,
+            },
+          },
+          create: { ...stdIds },
+        },
+      },
+    },
+    update: {
+      ...stdData,
+      ...mediaSpecific,
+      mediaIds: {
+        update: {
+          ...stdIds,
+        },
+      },
+    },
+  });
+}
+
+export async function processTraktShow(mediaList: WatchedShow[]) {
   let count = 0;
   const updatedMedia: UpdatedMedia[] = [];
+  const mediaType = "SHOW";
 
   for (let i = 0; i < mediaList.length; i++) {
     const rawMedia = mediaList[i];
@@ -91,40 +164,10 @@ export async function processTraktMedia(
     if (rawMedia === undefined) continue;
 
     // could use mediaType here but ts doesn't like that
-    const mediaBase = isMovie(rawMedia) ? rawMedia.movie : rawMedia.show;
-    const media = await fetchTraktMedia(mediaBase.ids.trakt, mediaType);
-    const people = await processTraktMediaPeople(
-      await fetchTraktMediaPeople(mediaBase.ids.trakt, mediaType)
-    );
+    const mediaBase = rawMedia.show;
+    const media = await traktClient.shows.summary(mediaBase.ids.slug);
 
     // if (i === 0) console.log({ media });
-
-    const stdData = {
-      title: media.title,
-      year: media.year,
-      overview: media.overview,
-      runtime: media.runtime,
-      trailer: media.trailer,
-      homepage: media.trailer,
-      status: media.status,
-      rating: media.rating,
-      votes: media.votes,
-      commentCount: media.comment_count,
-      language: media.language,
-      availableTranslations: media.available_translations,
-      genres: media.genres,
-      country: media.country,
-      certification: media.certification,
-      people: people,
-    };
-
-    const stdIds = {
-      trakt: mediaBase.ids.trakt,
-      tvdb: mediaBase.ids.tvdb,
-      imdb: mediaBase.ids.imdb,
-      tmdb: mediaBase.ids.tmdb,
-      mediaType: mediaType,
-    };
 
     const mediaSpecific: MediaSpecificItems = {
       tagline: null,
@@ -137,47 +180,12 @@ export async function processTraktMedia(
       network: null,
     };
 
-    if (isFullMovie(media)) {
-      mediaSpecific.tagline = media.tagline;
-      mediaSpecific.released = new Date(media.released);
-    } else {
-      mediaSpecific.firstAired = new Date(media.first_aired);
-      mediaSpecific.airedEpisodes = media.aired_episodes;
-      mediaSpecific.network = media.network;
-    }
+    // because its a show
+    mediaSpecific.firstAired = new Date(media.first_aired);
+    mediaSpecific.airedEpisodes = media.aired_episodes;
+    mediaSpecific.network = media.network;
 
-    await prisma.media.upsert({
-      where: {
-        title_year: {
-          title: media.title,
-          year: media.year,
-        },
-      },
-      create: {
-        ...stdData,
-        ...mediaSpecific,
-        mediaIds: {
-          connectOrCreate: {
-            where: {
-              trakt_mediaType: {
-                trakt: media.ids.trakt,
-                mediaType: mediaType,
-              },
-            },
-            create: { ...stdIds },
-          },
-        },
-      },
-      update: {
-        ...stdData,
-        ...mediaSpecific,
-        mediaIds: {
-          update: {
-            ...stdIds,
-          },
-        },
-      },
-    });
+    await saveMedia(media, mediaType, mediaSpecific);
 
     updatedMedia.push({ title: mediaBase.title, year: mediaBase.year });
     count++;
@@ -188,41 +196,57 @@ export async function processTraktMedia(
   updateGorseMedia(updatedMedia);
 }
 
-async function fetchTraktMedia(
-  id: number,
-  type: MediaType
-): Promise<TraktApiWatchedMovieFull | TraktApiWatchedShowFull> {
-  const media = await got.get(
-    `https://api.trakt.tv/${type.toLowerCase()}s/${id}?extended=full`,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "trakt-api-version": "2",
-        "trakt-api-key": process.env.TRAKT_ID || "",
-      },
-    }
-  );
+export async function processTraktMovie(mediaList: WatchedMovie[]) {
+  let count = 0;
+  const updatedMedia: UpdatedMedia[] = [];
+  const mediaType = "MOVIE";
 
-  if (type === "MOVIE")
-    return JSON.parse(media.body) as TraktApiWatchedMovieFull;
-  else if (type === "SHOW")
-    return JSON.parse(media.body) as TraktApiWatchedShowFull;
-  else return JSON.parse(media.body) as TraktApiWatchedMovieFull;
+  for (let i = 0; i < mediaList.length; i++) {
+    const rawMedia = mediaList[i];
+
+    if (rawMedia === undefined) continue;
+
+    // could use mediaType here but ts doesn't like that
+    const mediaBase = rawMedia.movie;
+    const media = await traktClient.movies.summary(mediaBase.ids.slug);
+
+    // if (i === 0) console.log({ media });
+
+    const mediaSpecific: MediaSpecificItems = {
+      tagline: null,
+      released: null,
+      firstAired: null,
+      airsDay: null,
+      airsTime: null,
+      airsTimezone: null,
+      airedEpisodes: null,
+      network: null,
+    };
+
+    // its a movie
+    mediaSpecific.tagline = media.tagline;
+    mediaSpecific.released = new Date(media.released);
+
+    await saveMedia(media, mediaType, mediaSpecific);
+
+    updatedMedia.push({ title: mediaBase.title, year: mediaBase.year });
+    count++;
+  }
+
+  console.log(`Added ${count} ${mediaType} to db`);
+
+  updateGorseMedia(updatedMedia);
 }
 
-export function isShowCrew(
-  obj: TraktApiMovieCrew | TraktApiShowCrew
-): obj is TraktApiShowCrew {
+export function isShowCrew(obj: MovieCrew | ShowCrew): obj is ShowCrew {
   return "created by" in obj;
 }
 
-function processTraktMediaPeople(
-  people: TraktApiMoviePeople | TraktApiShowPeople
-): string[] {
+function processTraktMediaPeople(people: MoviePeople | ShowPeople): string[] {
   const processedPeople: string[] = [];
 
   function existsThenProcess(
-    job: TraktApiCrewMember[] | TraktApiShowCrewMember[] | undefined
+    job: ShowCrewMember[] | MovieCrewMember[] | undefined
   ) {
     if (job !== undefined)
       job.forEach((person) => {
@@ -251,25 +275,4 @@ function processTraktMediaPeople(
   }
 
   return processedPeople;
-}
-
-async function fetchTraktMediaPeople(
-  id: number,
-  type: MediaType
-): Promise<TraktApiMoviePeople | TraktApiShowPeople> {
-  const people = await got.get(
-    `https://api.trakt.tv/${type.toLowerCase()}s/${id}/people`,
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "trakt-api-version": "2",
-        "trakt-api-key": process.env.TRAKT_ID || "",
-      },
-    }
-  );
-
-  if (type === "MOVIE") return JSON.parse(people.body) as TraktApiMoviePeople;
-  else if (type === "SHOW")
-    return JSON.parse(people.body) as TraktApiShowPeople;
-  else return JSON.parse(people.body) as TraktApiMoviePeople;
 }
