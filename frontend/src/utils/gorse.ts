@@ -1,4 +1,4 @@
-import { Gorse, Item } from "@gorse-io/gorsejs";
+import { Gorse, Item } from "gorsejs";
 import { Media } from "@prisma/client";
 import { prisma } from "../server/db/client";
 
