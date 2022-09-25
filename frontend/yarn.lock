@@ -464,10 +464,10 @@ balanced-match@^1.0.0:
   resolved "https://registry.yarnpkg.com/balanced-match/-/balanced-match-1.0.2.tgz#e83e3a7e3f300b34cb9d87f615fa0cbf357690ee"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
 
-better-trakt@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/better-trakt/-/better-trakt-0.2.0.tgz#43fd8fcaef45f330d621e40e6e1511515abdae28"
-  integrity sha512-yppn3KQl+Mo07CimVUR25BZkQaWQ2Q1afY57fjTt9vEWmJshnfSjBIftV6bb+4D/wpfriXeVGuRQqFt6fCqCJg==
+better-trakt@0.8.0:
+  version "0.8.0"
+  resolved "https://registry.yarnpkg.com/better-trakt/-/better-trakt-0.8.0.tgz#b55daf731dcded1b127db6ed45ad605fac128427"
+  integrity sha512-XKo7dGAgxND0+zbYogPbITLwGnPhT9o+HjQrcSMzUFUKKrFbuHL9WZSfc2buogImqzR4U5YcJr5L4N9DguUu8Q==
   dependencies:
     axios "^0.27.2"
 

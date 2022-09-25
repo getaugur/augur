@@ -14,10 +14,11 @@ import {
   MovieCrewMember,
   MovieCrew,
   ShowCrew,
+  ApiResponse,
 } from "better-trakt";
 
 const traktClient = new Trakt({
-  cliendId: process.env.TRAKT_ID || "",
+  clientId: process.env.TRAKT_ID || "",
   clientSecret: process.env.TRAKT_SECRET || "",
 });
 
@@ -31,17 +32,21 @@ export async function getWatchlist(id: string) {
     },
   });
 
-  const watchedMovies = await traktClient.users.watched.movies(
-    id,
-    account?.access_token || undefined
-  );
-  processTraktMovie(watchedMovies);
+  const watchedMovies = await traktClient.users.watchedMovies({
+    userId: id,
+    accessToken: account?.access_token || undefined,
+  });
 
-  const watchedShows = await traktClient.users.watched.shows(
-    id,
-    account?.access_token || undefined
-  );
-  processTraktShow(watchedShows);
+  if (watchedMovies.error === undefined && watchedMovies.data !== undefined)
+    processTraktMovie(watchedMovies.data);
+
+  const watchedShows = await traktClient.users.watchedShows({
+    userId: id,
+    accessToken: account?.access_token || undefined,
+  });
+
+  if (watchedShows.error === undefined && watchedShows.data !== undefined)
+    processTraktShow(watchedShows.data);
 
   await updateGorseUser(id, "Trakt");
 }
@@ -72,8 +77,8 @@ async function extractStdData(
 ) {
   const people = await processTraktMediaPeople(
     mediaType === "MOVIE"
-      ? await traktClient.movies.people(media.ids.slug)
-      : await traktClient.shows.people(media.ids.slug)
+      ? await traktClient.movies.people({ movieId: media.ids.slug })
+      : await traktClient.shows.people({ showId: media.ids.slug })
   );
 
   return {
@@ -165,7 +170,11 @@ export async function processTraktShow(mediaList: WatchedShow[]) {
 
     // could use mediaType here but ts doesn't like that
     const mediaBase = rawMedia.show;
-    const media = await traktClient.shows.summary(mediaBase.ids.slug);
+    const media = await traktClient.shows.summary({
+      showId: mediaBase.ids.slug,
+    });
+
+    if (media.data === undefined) continue;
 
     // if (i === 0) console.log({ media });
 
@@ -181,11 +190,11 @@ export async function processTraktShow(mediaList: WatchedShow[]) {
     };
 
     // because its a show
-    mediaSpecific.firstAired = new Date(media.first_aired);
-    mediaSpecific.airedEpisodes = media.aired_episodes;
-    mediaSpecific.network = media.network;
+    mediaSpecific.firstAired = new Date(media.data.first_aired);
+    mediaSpecific.airedEpisodes = media.data.aired_episodes;
+    mediaSpecific.network = media.data.network;
 
-    await saveMedia(media, mediaType, mediaSpecific);
+    await saveMedia(media.data, mediaType, mediaSpecific);
 
     updatedMedia.push({ title: mediaBase.title, year: mediaBase.year });
     count++;
@@ -208,7 +217,11 @@ export async function processTraktMovie(mediaList: WatchedMovie[]) {
 
     // could use mediaType here but ts doesn't like that
     const mediaBase = rawMedia.movie;
-    const media = await traktClient.movies.summary(mediaBase.ids.slug);
+    const media = await traktClient.movies.summary({
+      movieId: mediaBase.ids.slug,
+    });
+
+    if (media.data === undefined) continue;
 
     // if (i === 0) console.log({ media });
 
@@ -224,10 +237,10 @@ export async function processTraktMovie(mediaList: WatchedMovie[]) {
     };
 
     // its a movie
-    mediaSpecific.tagline = media.tagline;
-    mediaSpecific.released = new Date(media.released);
+    mediaSpecific.tagline = media.data.tagline;
+    mediaSpecific.released = new Date(media.data.released);
 
-    await saveMedia(media, mediaType, mediaSpecific);
+    await saveMedia(media.data, mediaType, mediaSpecific);
 
     updatedMedia.push({ title: mediaBase.title, year: mediaBase.year });
     count++;
@@ -242,8 +255,12 @@ export function isShowCrew(obj: MovieCrew | ShowCrew): obj is ShowCrew {
   return "created by" in obj;
 }
 
-function processTraktMediaPeople(people: MoviePeople | ShowPeople): string[] {
+function processTraktMediaPeople(
+  ApiResponse: ApiResponse<MoviePeople | ShowPeople>
+): string[] {
   const processedPeople: string[] = [];
+
+  const people = ApiResponse.data;
 
   function existsThenProcess(
     job: ShowCrewMember[] | MovieCrewMember[] | undefined
