@@ -1,7 +1,6 @@
 import { MediaType } from "@prisma/client";
 import { prisma } from "../server/db/client";
 import { UpdatedMedia, updateGorseMedia, updateGorseUser } from "./gorse";
-import got from "got";
 import {
   Trakt,
   WatchedShow,
