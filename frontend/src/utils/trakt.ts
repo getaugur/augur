@@ -1,6 +1,6 @@
 import { MediaType } from "@prisma/client";
 import { prisma } from "../server/db/client";
-import { UpdatedMedia, updateGorseMedia, updateGorseUser } from "./gorse";
+// import { UpdatedMedia, updateGorseMedia, updateGorseUser } from "./gorse";
 import {
   Trakt,
   WatchedShow,
@@ -47,7 +47,7 @@ export async function getWatchlist(id: string) {
   if (watchedShows.error === undefined && watchedShows.data !== undefined)
     processTraktShow(watchedShows.data);
 
-  await updateGorseUser(id, "Trakt");
+  // await updateGorseUser(id, "Trakt");
 }
 
 interface MediaSpecificItems {
@@ -159,7 +159,7 @@ async function saveMedia(
 
 export async function processTraktShow(mediaList: WatchedShow[]) {
   let count = 0;
-  const updatedMedia: UpdatedMedia[] = [];
+  const updatedMedia = [];
   const mediaType = "SHOW";
 
   for (let i = 0; i < mediaList.length; i++) {
@@ -201,12 +201,12 @@ export async function processTraktShow(mediaList: WatchedShow[]) {
 
   console.log(`Added ${count} ${mediaType} to db`);
 
-  updateGorseMedia(updatedMedia);
+  // updateGorseMedia(updatedMedia);
 }
 
 export async function processTraktMovie(mediaList: WatchedMovie[]) {
   let count = 0;
-  const updatedMedia: UpdatedMedia[] = [];
+  const updatedMedia = [];
   const mediaType = "MOVIE";
 
   for (let i = 0; i < mediaList.length; i++) {
@@ -247,7 +247,7 @@ export async function processTraktMovie(mediaList: WatchedMovie[]) {
 
   console.log(`Added ${count} ${mediaType} to db`);
 
-  updateGorseMedia(updatedMedia);
+  // updateGorseMedia(updatedMedia);
 }
 
 export function isShowCrew(obj: MovieCrew | ShowCrew): obj is ShowCrew {
