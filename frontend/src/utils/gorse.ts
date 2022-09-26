@@ -1,11 +1,7 @@
 import { Gorse, Item } from "gorsejs";
 import { Media } from "@prisma/client";
 import { prisma } from "../server/db/client";
-
-export interface UpdatedMedia {
-  title: string;
-  year: number;
-}
+import { MediaWithIDs, UpdatedMedia } from "./processDocuments";
 
 export const gorseClient = new Gorse({
   endpoint: process.env.GORSE_ENDPOINT || "",
@@ -20,49 +16,24 @@ export async function updateGorseUser(userId: string, provider: string) {
   });
 }
 
-export async function updateGorseMedia(updatedMedia: UpdatedMedia[]) {
+export async function updateGorseMedia(updatedMedia: MediaWithIDs[]) {
   const items: Item[] = [];
 
   for (let i = 0; i < updatedMedia.length; i++) {
-    const mediaObj = updatedMedia[i];
+    const media = updatedMedia[i];
 
-    if (mediaObj === undefined) continue;
-
-    const media = await prisma.media.findUnique({
-      where: {
-        title_year: {
-          title: mediaObj.title,
-          year: mediaObj.year,
-        },
-      },
-      include: {
-        mediaIds: true,
-      },
-    });
-
-    if (media === null) continue;
+    if (media === undefined) continue;
 
     const labels = extractLabels(media);
 
     items.push({
-      ItemId: `${mediaObj.title}-${mediaObj.year}`,
+      ItemId: `${media.title}-${media.year}`,
       Comment: media.title,
       IsHidden: false,
       Timestamp: new Date(media.firstAired || media.released || ""),
       Categories: [media.mediaIds.mediaType, ...media.genres],
       Labels: [...media.genres, ...labels, ...media.people],
     });
-
-    if (i === 0) {
-      gorseClient.upsertFeedbacks([
-        {
-          FeedbackType: "like",
-          ItemId: `${mediaObj.title}-${mediaObj.year}`,
-          UserId: "huskydog9988",
-          Timestamp: new Date(),
-        },
-      ]);
-    }
   }
 
   gorseClient.upsertItems(items);

@@ -1,6 +1,5 @@
 import { MediaType } from "@prisma/client";
 import { prisma } from "../server/db/client";
-// import { UpdatedMedia, updateGorseMedia, updateGorseUser } from "./gorse";
 import {
   Trakt,
   WatchedShow,
@@ -15,6 +14,7 @@ import {
   ShowCrew,
   ApiResponse,
 } from "better-trakt";
+import { processDocuments } from "./processDocuments";
 
 const traktClient = new Trakt({
   clientId: process.env.TRAKT_ID || "",
@@ -201,7 +201,7 @@ export async function processTraktShow(mediaList: WatchedShow[]) {
 
   console.log(`Added ${count} ${mediaType} to db`);
 
-  // updateGorseMedia(updatedMedia);
+  processDocuments(updatedMedia);
 }
 
 export async function processTraktMovie(mediaList: WatchedMovie[]) {
@@ -247,7 +247,7 @@ export async function processTraktMovie(mediaList: WatchedMovie[]) {
 
   console.log(`Added ${count} ${mediaType} to db`);
 
-  // updateGorseMedia(updatedMedia);
+  processDocuments(updatedMedia);
 }
 
 export function isShowCrew(obj: MovieCrew | ShowCrew): obj is ShowCrew {
