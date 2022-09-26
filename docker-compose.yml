@@ -28,3 +28,13 @@ services:
       - ./gorse/config.toml:/etc/gorse/config.toml
     depends_on:
       - cockroach
+
+  meilisearch:
+    image: getmeili/meilisearch:v0.28
+    ports:
+      - "7700:7700"
+    environment:
+      MEILI_MASTER_KEY: MASTER_KEY
+      MEILI_ENV: ${MEILI_ENV:-development}
+    volumes:
+      - "./dev/meili_data:/meili_data"
