@@ -37,7 +37,7 @@ export async function getWatchlist(id: string) {
   });
 
   if (watchedMovies.error === undefined && watchedMovies.data !== undefined)
-    processTraktMovie(watchedMovies.data);
+    processTraktMovie(watchedMovies.data, id);
 
   const watchedShows = await traktClient.users.watchedShows({
     userId: id,
@@ -45,7 +45,7 @@ export async function getWatchlist(id: string) {
   });
 
   if (watchedShows.error === undefined && watchedShows.data !== undefined)
-    processTraktShow(watchedShows.data);
+    processTraktShow(watchedShows.data, id);
 
   // await updateGorseUser(id, "Trakt");
 }
@@ -161,7 +161,10 @@ async function saveMedia(
   }
 }
 
-export async function processTraktShow(mediaList: WatchedShow[]) {
+export async function processTraktShow(
+  mediaList: WatchedShow[],
+  username?: string
+) {
   let count = 0;
   const updatedMedia = [];
   const mediaType = "SHOW";
@@ -205,10 +208,13 @@ export async function processTraktShow(mediaList: WatchedShow[]) {
 
   console.log(`Added ${count} ${mediaType} to db`);
 
-  processDocuments(updatedMedia);
+  processDocuments(updatedMedia, username);
 }
 
-export async function processTraktMovie(mediaList: WatchedMovie[]) {
+export async function processTraktMovie(
+  mediaList: WatchedMovie[],
+  username?: string
+) {
   let count = 0;
   const updatedMedia = [];
   const mediaType = "MOVIE";
@@ -251,7 +257,7 @@ export async function processTraktMovie(mediaList: WatchedMovie[]) {
 
   console.log(`Added ${count} ${mediaType} to db`);
 
-  processDocuments(updatedMedia);
+  processDocuments(updatedMedia, username);
 }
 
 export function isShowCrew(obj: MovieCrew | ShowCrew): obj is ShowCrew {

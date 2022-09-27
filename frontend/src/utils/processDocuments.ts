@@ -17,7 +17,8 @@ export interface UpdatedMedia {
 }
 
 export async function processDocuments(
-  updatedMedia: UpdatedMedia[]
+  updatedMedia: UpdatedMedia[],
+  username?: string
 ): Promise<void> {
   const items: UpdatedMediaData[] = [];
 
@@ -49,7 +50,7 @@ export async function processDocuments(
     });
   }
 
-  updateGorseMedia(items);
+  updateGorseMedia(items, username);
   updateMeiliMedia(items);
 }
 
