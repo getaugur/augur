@@ -123,38 +123,42 @@ async function saveMedia(
 
   const stdIds = extractStdIds(media, mediaType);
 
-  await prisma.media.upsert({
-    where: {
-      title_year: {
-        title: media.title,
-        year: media.year,
+  try {
+    await prisma.media.upsert({
+      where: {
+        title_year: {
+          title: media.title,
+          year: media.year,
+        },
       },
-    },
-    create: {
-      ...stdData,
-      ...mediaSpecific,
-      mediaIds: {
-        connectOrCreate: {
-          where: {
-            trakt_mediaType: {
-              trakt: media.ids.trakt,
-              mediaType: mediaType,
+      create: {
+        ...stdData,
+        ...mediaSpecific,
+        mediaIds: {
+          connectOrCreate: {
+            where: {
+              trakt_mediaType: {
+                trakt: media.ids.trakt,
+                mediaType: mediaType,
+              },
             },
+            create: { ...stdIds },
           },
-          create: { ...stdIds },
         },
       },
-    },
-    update: {
-      ...stdData,
-      ...mediaSpecific,
-      mediaIds: {
-        update: {
-          ...stdIds,
+      update: {
+        ...stdData,
+        ...mediaSpecific,
+        mediaIds: {
+          update: {
+            ...stdIds,
+          },
         },
       },
-    },
-  });
+    });
+  } catch (e) {
+    console.error({ ...stdIds });
+  }
 }
 
 export async function processTraktShow(mediaList: WatchedShow[]) {
