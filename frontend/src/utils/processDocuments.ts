@@ -49,7 +49,7 @@ export async function processDocuments(
     });
   }
 
-  //   updateGorseMedia(items);
+  updateGorseMedia(items);
   updateMeiliMedia(items);
 }
 
