@@ -17,6 +17,8 @@ export default function Component() {
 
   useEffect(() => {
     //search movie index based on search value
+    if (search.length == 0) return;
+
     client
       .index("media")
       .search(search, {
