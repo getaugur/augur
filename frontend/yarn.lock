@@ -449,6 +449,14 @@ axe-core@^4.4.2:
   resolved "https://registry.yarnpkg.com/axe-core/-/axe-core-4.4.3.tgz#11c74d23d5013c0fa5d183796729bc3482bd2f6f"
   integrity sha512-32+ub6kkdhhWick/UjvEwRchgoetXqTK14INLqbGm5U2TzBkBNF3nQtLYm8ovxSkQWArjEQvftCKryjZaATu3w==
 
+axios-logger@^2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/axios-logger/-/axios-logger-2.6.1.tgz#2d251bc9902810e5ce4b9f0375a0e663b822379a"
+  integrity sha512-eWyd9n9YtjwD+NWh1gVeuGIoR9AsNsNO2Cr7JLw/6CiM3wvRwaU0fr7Rub6+lD9OwBMNFlzkBGBmiQZOOp/rOA==
+  dependencies:
+    chalk "^4.1.0"
+    dateformat "^3.0.3"
+
 axios@^0.27.0, axios@^0.27.2:
   version "0.27.2"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.27.2.tgz#207658cc8621606e586c85db4b41a750e756d972"
@@ -546,7 +554,7 @@ caniuse-lite@^1.0.30001400, caniuse-lite@^1.0.30001406, caniuse-lite@^1.0.300014
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001412.tgz#30f67d55a865da43e0aeec003f073ea8764d5d7c"
   integrity sha512-+TeEIee1gS5bYOiuf+PS/kp2mrXic37Hl66VY6EAfxasIk5fELTktK2oOezYed12H8w7jt3s512PpulQidPjwA==
 
-chalk@^4.0.0:
+chalk@^4.0.0, chalk@^4.1.0:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-4.1.2.tgz#aac4e2b7734a740867aeb16bf02aad556a1e7a01"
   integrity sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA==
@@ -674,6 +682,11 @@ damerau-levenshtein@^1.0.8:
   version "1.0.8"
   resolved "https://registry.yarnpkg.com/damerau-levenshtein/-/damerau-levenshtein-1.0.8.tgz#b43d286ccbd36bc5b2f7ed41caf2d0aba1f8a6e7"
   integrity sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==
+
+dateformat@^3.0.3:
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/dateformat/-/dateformat-3.0.3.tgz#a6e37499a4d9a9cf85ef5872044d62901c9889ae"
+  integrity sha512-jyCETtSl3VMZMWeRo7iY1FL19ges1t55hMo5yaam4Jrsm5EPL89UQkoQRyiI+Yf4k8r2ZpdngkV8hr1lIdjb3Q==
 
 debug@^2.6.9:
   version "2.6.9"
@@ -1256,12 +1269,13 @@ globby@^11.1.0:
     merge2 "^1.4.1"
     slash "^3.0.0"
 
-gorsejs@^0.4.3:
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/gorsejs/-/gorsejs-0.4.3.tgz#5f2d571baaa0f95c6c29b4662d02adb927e4efce"
-  integrity sha512-MO1iWi1o6f36AEj5UaIltFAg1cTaATeCkyuSIfFSN+CoNVr7oOwAM+huXqlB62FtR6oJhMJalKn7VvCuVv3/yQ==
+gorsejs@^0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/gorsejs/-/gorsejs-0.4.4.tgz#cf2f5a13cd7119d1a8144b7ee34b8c4be35e27e1"
+  integrity sha512-JzlX6Zdv5kNgGgJh2tuP1og/kItQ+b5Jmt9F/KupiqWdz3bssGXKvNeityFZi/U2SxPy76VPuRCi3eNmupr0MQ==
   dependencies:
     axios "^0.27.0"
+    axios-logger "^2.6.1"
     dotenv "^16.0.0"
 
 grapheme-splitter@^1.0.4:
