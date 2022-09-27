@@ -117,7 +117,7 @@ model Media {
     airedEpisodes Int?
     network       String?
 
-    mediaIds   MediaIds @relation(fields: [mediaIdsId], references: [id])
+    mediaIds   MediaIds @relation(fields: [mediaIdsId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     mediaIdsId String   @unique
 
     createdAt DateTime @default(now())
