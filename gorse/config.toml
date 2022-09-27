@@ -75,7 +75,7 @@ cache_expire = "72h"
 [recommend.data_source]
 
 # The feedback types for positive events.
-positive_feedback_types = ["star","like"]
+positive_feedback_types = ["watched","watchlist"]
 
 # The feedback types for read events.
 read_feedback_types = ["read"]
