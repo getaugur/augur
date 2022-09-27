@@ -18,7 +18,8 @@ services:
       -c /etc/gorse/config.toml
     environment:
       GORSE_DATA_STORE: postgres://root@cockroach:26257/gorse?sslmode=disable
-      GORSE_CACHE_STORE: postgres://root@cockroach:26257/gorse?sslmode=disable
+      # GORSE_CACHE_STORE: postgres://root@cockroach:26257/gorse?sslmode=disable
+      GORSE_CACHE_STORE: redis://dragonfly:6379/
       # GORSE_DATA_STORE: postgresql://root@cockroach:26257/defaultdb?sslmode=disable
       # GORSE_CACHE_STORE: postgresql://root@cockroach:26257/defaultdb?sslmode=disable
     ports:
@@ -28,6 +29,22 @@ services:
       - ./gorse/config.toml:/etc/gorse/config.toml
     depends_on:
       - cockroach
+      - dragonfly
+
+  dragonfly:
+    image: "docker.dragonflydb.io/dragonflydb/dragonfly"
+    ulimits:
+      memlock: -1
+    ports:
+      - "6379:6379"
+    # For better performance, consider `host` mode instead `port` to avoid docker NAT.
+    # `host` mode is NOT currently supported in Swarm Mode.
+    # https://docs.docker.com/compose/compose-file/compose-file-v3/#network_mode
+    # network_mode: "host"
+    volumes:
+      - ./dev/dragonfly:/data
+    command:
+      - "--hz=0"
 
   meilisearch:
     image: getmeili/meilisearch:v0.28
