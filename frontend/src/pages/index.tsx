@@ -8,10 +8,12 @@ import { authOptions } from "./api/auth/[...nextauth]";
 import Navbar from "../components/navbar";
 
 const Home: NextPage = () => {
-  const { data, isLoading } = trpc.useQuery([
-    "example.hello",
-    { text: "from tRPC" },
-  ]);
+  // const { data, isLoading } = trpc.useQuery([
+  //   "example.hello",
+  //   { text: "from tRPC" },
+  // ]);
+
+  const hello = trpc.example.hello.useQuery({ text: "from tRPC" });
 
   return (
     <>
