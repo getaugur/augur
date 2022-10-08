@@ -1,6 +1,6 @@
 // src/pages/_app.tsx
 import { withTRPC } from "@trpc/next";
-import type { AppRouter } from "../server/router";
+import type { AppRouter } from "../server/trpc";
 
 import superjson from "superjson";
 import { SessionProvider } from "next-auth/react";
