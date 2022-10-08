@@ -13,7 +13,7 @@ services:
       - "./dev/database:/cockroach/cockroach-data"
 
   gorse:
-    image: zhenghaoz/gorse-in-one:0.4.5
+    image: zhenghaoz/gorse-in-one:0.4.7
     command: >
       -c /etc/gorse/config.toml
     environment:
