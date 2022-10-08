@@ -20,6 +20,7 @@ export const serverSchema = z.object({
   TRAKT_SECRET: z.string(),
   GORSE_ENDPOINT: z.string(),
   GORSE_SECRET: z.string(),
+  TMDB_V3_KEY: z.string(),
 });
 
 /**
