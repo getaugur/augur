@@ -44,7 +44,10 @@ export default function Component() {
   }
   return (
     <>
-      <button className="btn btn-ghost" onClick={() => signIn("trakt")}>
+      <button
+        className="btn btn-ghost"
+        onClick={() => signIn("trakt", { callbackUrl: "/dashboard" })}
+      >
         Sign In
       </button>
     </>

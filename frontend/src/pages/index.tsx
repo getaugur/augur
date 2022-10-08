@@ -37,7 +37,10 @@ const Home: NextPage = () => {
               show and movie. Crowdsourced recommendations mixed with best in
               class AI provide highly relevent recommendations.
             </p>
-            <button className="btn btn-primary" onClick={() => signIn("trakt")}>
+            <button
+              className="btn btn-primary"
+              onClick={() => signIn("trakt", { callbackUrl: "/dashboard" })}
+            >
               Get Started
             </button>
           </div>
