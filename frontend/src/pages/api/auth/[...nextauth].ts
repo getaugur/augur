@@ -15,6 +15,15 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.TRAKT_SECRET || "",
     }),
   ],
+  callbacks: {
+    session({ session, user }) {
+      if (session.user) {
+        session.user.id = user.id;
+      }
+
+      return session;
+    },
+  },
   events: {
     async signIn(message) {
       // console.log({ message });
